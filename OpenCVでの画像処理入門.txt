@@ -1,0 +1,733 @@
+セクション3:画像処理の基礎
+
+10:画像の基礎知識
+  ・画像処理では座標軸の原点は左上
+  ・OpenCVでは画像はBGRの順番ではいっている
+  ・画像を読み込むとNumpy Arrayにy,x,colorの順番に画素値を格納する
+  
+11:画像の表示・出力
+  ・画像の読み込み
+   img = cv2.imread('data/src/Berry.jpg')
+   
+  ・画像の表示
+   cv2.imshow('img', img)   #第一引数は画像名をつける
+   cv2.waitKey(0)           #キーボードからの入力時間を設定
+   cv2.destroyAllWindows()  #キーボードから入力あると画像を消す 
+   
+  ・画像を保存する
+   cv2.imwrite('output/test.jpg',img)  
+
+12.動画の表示・出力
+   import cv2
+   import sys 
+   cap = cv2.VideoCapture('data/movie/Cosmos.mp4')
+   if cap.isOpened() == False:  # 読み込みNGの場合はプログラムを終了
+       sys.exit()
+   ret, frame = cap.read()  # retにはTrue,Falseが入る。読み込めるとTrue
+   h, w =frame.shape[:2]
+   fourcc = cv2.VideoWriter_fourcc(*'XVID') # codecの設定
+   dst = cv2.VideoWriter('output/test.avi', fourcc, 30.0, (w,h)) # 30.0はFPSの設定
+
+   while True:
+       ret, frame = cap.read()
+       if ret == False:
+           break
+       cv2.imshow('img', frame)
+       dst.write(frame)
+       if cv2.waitKey(30) == 27: #30秒以内にEscボタンが押された場合
+           break
+   cv2.destroyAllWindows()
+   cap.release() #メモリを解放する
+   
+13.ウィンドウの調整
+   # デフォルト設定
+   img = cv2.imread('data/src/Lena.jpg')
+   cv2.namedWindow('Window', cv2.WINDOW_AUTOSIZE) # ウィンドウの自動調整
+   cv2.imshow('Window',img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+   # ウィンドウのサイズを調整
+   img = cv2.imread('data/src/Lena.jpg')
+   cv2.namedWindow('Window', cv2.WINDOW_NORMAL) # ウィンドウのサイズを調整できる
+   cv2.imshow('Window',img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+   # ウィンドウのリサイズする
+   img = cv2.imread('data/src/Lena.jpg')
+   cv2.namedWindow('Window', cv2.WINDOW_NORMAL) 
+   cv2.resizeWindow('window', 640, 480)  # ここで画像サイズの設定をする
+   cv2.imshow('Window',img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+14.リサイズ
+   img = cv2.imread('data/src/grapes.jpg')
+   size = (300, 200) # 幅、高さで設定する
+   img_resize = cv2.resize(img, size)    
+   cv2.imshow('resize', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・圧縮方法を変更する
+   img_area = cv2.resize(img, size, interpolation = cv2.INTER_AREA) # 圧縮方法をINTER_AREA、この方が優れている
+   img_linear = cv2.resize(img, size, interpolation = cv2.INTER_LINEAR) #デフィルトはINTER_LINEAR
+   cv2.imshow('area', img_area)
+   cv2.imshow('linear',img_linear)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows() 
+   
+15.色空間・グレースケール
+  ・HSVでの色の表現
+    H(Hue):色相 0-359
+    S(Saturation):彩度0-100%
+   V(Value):明度 0-100%
+   
+   OpenCVでは
+   H:0-179
+   S:0-255
+   V:0-255 
+   
+  ・読み込み画像をグレースケール、HSVに変換する
+   img = cv2.imread('data/src/grapes.jpg')
+   img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) # Glayスケールに変換
+   img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV) # HSVスケールに変換 
+   
+   cv2.imshow('img', img)
+   cv2.imshow('gray', img_gray)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・データ読み込み時にグレースケールにする
+   # 引数を0を与えると、最初からグレースケールで読み込む
+   img_gray2 = cv2.imread('data/src/grapes.jpg', 0)
+   cv2.imshow('gray', img_gray2)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+       
+16.ヒストグラム
+   import cv2
+   import matplotlib.pyplot as plt
+   %matplotlib inline
+
+  ・RGBのヒストグラムを確認
+   img = cv2.imread('data/src/Lena.jpg')
+   color_list = ['blue', 'green', 'red']
+   for i, j in enumerate(color_list):
+       hist = cv2.calcHist([img],[i], None, [256], [0, 256]) #3番目の引数はマスク有無、4番目はbinの数
+       plt.plot(hist,color = j)  
+       
+  ・グレースケールのヒストグラムを確認
+  img_gray = cv2.imread('data/src/Lena.jpg', 0)
+  hist2 = cv2.calcHist([img_gray], [0], None, [256], [0,256])
+  plt.plot(hist2) 
+  
+17.ヒストグラム均一化
+  img = cv2.imread('data/src/Lena.jpg', 0) 
+  img_eq = cv2.equalizeHist(img) # ヒストグラムの均一化を行う
+  hist_e = cv2.calcHist([img_eq], [0], None, [256], [0, 256])
+  plt.plot(hist_e) 
+  
+18.γ変換
+   ガンマ変換とは画像の明るさの変換方法
+   γが１より小さい：画像が暗くなる
+   γが１より大きい：画像が明るくなる
+   式はy=255(x/255)の1/γ乗
+   
+   gamma = 0.4
+   img = cv2.imread('data/src/Berry.jpg')
+   gamma_cvt = np.zeros((256,1), dtype=np.uint8)
+   for i in range(256):
+       gamma_cvt[i][0] = 255 * (float(i)/255) ** (1.0 / gamma)
+       
+   img_gamma = cv2.LUT(img, gamma_cvt)
+
+   cv2.imshow('img', img)
+   cv2.imshow('gamma',img_gamma)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+19. トラックバーの作成
+   def onTrackbar(position):  #トラックバー で動かした値を格納する関数
+       global trackValue
+       trackValue = position
+       
+   trackValue = 100    
+   cv2.namedWindow('img')
+   #引数1は名前、引数2はwindow名、引数3は初期値、引数4は最大値、引数5は関数
+   cv2.createTrackbar('track', 'img', trackValue, 255, onTrackbar) 
+   cv2.waitKey(0)
+   cv2.destroyAllWindows() 
+   
+20. マウスイベント     
+   def print_position(event, x, y, flags, param):
+       # ダブルクリックした場所の座標を返す
+       if event == cv2.EVENT_LBUTTONDBLCLK:
+           print(x,y)
+   img = np.zeros((512, 512), np.uint8)  # 仮画像を作成
+   cv2.namedWindow('img')
+   cv2.setMouseCallback('img', print_position)  # ダブルクリックすると座標を返す
+   cv2.imshow('img', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()        
+   
+21.図形の描画・文字の記述
+   img = np.ones((500, 500, 3), dtype=np.uint8)*255 #白の画像を作成
+
+   cv2.line(img, (0,0), (150,190), (255, 0, 0), 2)  # 始点、終点、color, 太さ
+   cv2.rectangle(img,(100,25), (300, 150), (0,255,0),4) # 左上の点、右下の点、color, 太さ
+   cv2.circle(img,(100,100), 55, (0, 0, 255), -1) # 中心座礁,半径、color, 太さ(-1で中を塗りつぶす)
+   cv2.ellipse(img, (250, 250), (100, 50), 20, 0, 360, (255, 0, 0), 1) #中心座標,長さの比,楕円の角度,スタート位置、終了位置,color,太さ
+
+   pts = np.array([[100, 30], [200, 30], [200, 80], [100, 50]])
+   cv2.polylines(img, [pts], False, (200,255,0),3) # 座標、始点と終点を結ぶか,color,太さ
+
+   font = cv2.FONT_HERSHEY_SIMPLEX #fontの指定
+   cv2.putText(img, 'OpenCV', (100, 300), font, 1, (0,255,0), 3, cv2.LINE_AA)
+
+   cv2.imshow('img', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+22. ２値化
+  ・通常の2値化
+   img = cv2.imread('data/src/grapes.jpg', 0)
+   threshold = 100
+   ret, img_th = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY) # 画像、th,thを超えた時の値、2値化の方法
+   
+   ret # 閾値を表示
+   cv2.imshow('img_th', img_th)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()  
+   
+  ・大津の2値化
+    # 大津の2値化は、2値化のしきい値を自動的に求める手法
+    ret2, img_o = cv2.threshold(img, 0, 255, cv2.THRESH_OTSU)  
+    ret2 # 閾値を表示
+   
+   # ヒストグラムで確認
+   hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+   plt.plot(hist)
+   
+   cv2.imshow('otsu', img_o)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+
+  ・アダプティブスレッショルドによる2値化
+    # 近傍から閾値を求めて変換する 
+    
+  img_ada = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, 1) 
+  
+23. 2値化+トラックバー  
+  img = cv2.imread('data/src/floor.jpg',0) 
+  
+  def onTrackbar(position):
+    global threshold
+    threshold = position
+  cv2.namedWindow('img')
+  threshold = 100
+  cv2.createTrackbar('track', 'img', threshold, 255, onTrackbar)
+  while True:
+  #    ret, img_th = cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY) # 通常の2値化の場合
+      img_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 3, threshold)
+      cv2.imshow('img', img_th)
+      cv2.imshow('src', img)
+      if cv2.waitKey(10) == 27: # escキーが押されたら
+          break
+  cv2.destroyAllWindows()    
+  
+セクション4:画像処理・画像解析
+
+24. アファイン変換
+  ・アファイン変換とうは回転・平行移動などの線形変換
+  
+  ・画像の平行移動
+    img = cv2.imread('data/src/grapes.jpg')
+    h, w = img.shape[:2]
+    dx , dy = 30, 30  #画像のピクセル数 
+    
+    afn_mat = np.float32([[1,0,dx], [0,1,dy]]) #変換行列の定義
+    img_afn = cv2.warpAffine(img, afn_mat, (w,h))#アファイン変換する 
+    
+    cv2.imshow('trans', img_afn)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows() 
+    
+  ・画像の回転
+    rot_mat = cv2.getRotationMatrix2D((w/2, h/2), 40, 1)  # 画像の中心、開園角度、画像を拡大・縮小するかどうか
+    img_afn2 = cv2.warpAffine(img, rot_mat, (w,h)) 
+    
+    cv2.imshow('rotation', img_afn2)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+25.透視変換
+    画像が奥行方向に分布しているような変換 
+    
+    img = cv2.imread('data/src/drive.jpg')
+    h, w = img.shape[:2] 
+    
+    per1 = np.float32([[100, 500], [300, 500], [300, 100], [100, 100]]) #変換前の四隅の点位置
+    per2 = np.float32([[100, 500], [300, 500], [280, 200], [150, 200]]) #変更後の四隅の点位置
+
+    psp_matrix = cv2.getPerspectiveTransform(per1, per2)
+    img_psp = cv2.warpPerspective(img, psp_matrix, (w,h)) 
+    
+    cv2.imshow('psp', img_psp)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows() 
+    
+26.畳み込みとは
+   畳み込みとは周囲の情報を使った自分の画素値の更新
+   1:フィルターを容易
+   2:着目画素の周囲で(画素値)×(フィルター)を行い足していく=畳み込み
+   3:全ての画素について畳み込みを行う
+   
+   
+27.畳み込みの基礎
+   kernel = np.ones((3,3)) / 9.0 # 1/9フィルタを作成する
+   img = cv2.imread('data/src/Lena.jpg', 0)
+   img_kel = cv2.filter2D(img, -1, kernel)
+   cv2.imshow('img', img_kel)
+   cv2.imshow('src', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・sobelフィルタの場合
+   # sobelフィルタ
+   kernel2 = np.zeros((3,3))
+   kernel2[0,0] = 1
+   kernel2[1,0] = 2
+   kernel2[2,0] = 1
+   kernel2[0,2] = -1
+   kernel2[1,2] = -2
+   kernel2[2,2] = -1    
+   
+   img_ke2 = cv2.filter2D(img, -1, kernel2)
+   
+   cv2.imshow('img', img_ke2)
+   cv2.imshow('src', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+   
+28.画像の平滑化   
+
+  img = cv2.imread('data/src/buildings.jpg')
+
+  ・1/9フィルタを作成
+  img_blur = cv2.blur(img, (3,3)) 
+  cv2.imshow('img', img_blur)
+  cv2.imshow('src', img)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows() 
+  
+  ・ガウシャンフィルタ
+  img_ga = cv2.GaussianBlur(img, (9,9), 2) #第3引数はσ
+  
+  ・メジアンフィルタ
+  img_me = cv2.medianBlur(img, 5) #枠の中の中央値を使用する
+  
+  ・非線形フィルタのBilateralフィルタ  
+  img_bi = cv2.bilateralFilter(img, 20, 30, 30)
+  
+29.画像の微分
+  ・画像を微分するとエッジが検出できる
+  
+30.エッジの検出(Sobel/Laplacian)
+  ・Sobelフィルタ
+   img = cv2.imread('data/src/Lena.jpg', 0)
+   img_sobelx = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=3) #2引数はビット深度、x方向に微分の場合は3と4の引数は1,0
+   img_sobely = cv2.Sobel(img, cv2.CV_32F, 0, 1, ksize=3) #2引数はビット深度、y方向に微分の場合は3と4の引数は0,1
+
+   # 絶対数に変換
+   img_sovelx = cv2.convertScaleAbs(img_sobelx)
+   img_sovely = cv2.convertScaleAbs(img_sobely)
+
+   cv2.imshow('x', img_sobelx)
+   cv2.imshow('y', img_sobely)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・Laplacianフィルタ 
+  img_lap = cv2.Laplacian(img, cv2.CV_32F) #2引数はビット深度  
+  img_lap = cv2.convertScaleAbs(img_lap)
+  cv2.imshow('lap', img_lap)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+  
+  # 強調させるには画像の値を2倍にする
+  img_lap = img_lap *2
+  cv2.imshow('lap', img_lap)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+  
+  ・Laplacian & GaussianBlurフィルタ
+   img_blur = cv2.GaussianBlur(img, (3, 3), 2)
+   img_lap2 = cv2.Laplacian(img_blur, cv2.CV_32F)
+   img_lap2 = cv2.convertScaleAbs(img_lap2)
+   
+   cv2.imshow('lap', img_lap2)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows() 
+   
+   # 強調させるには画像の値を2倍にする
+   img_lap2 = img_lap2 *2
+   cv2.imshow('lap', img_lap2)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+31.エッジの検出(Canny)
+  ・Cannyはノイズを上手く取り除き、エッジを検出する
+  
+  img = cv2.imread('data/src/Lena.jpg',0)
+  img_canny = cv2.Canny(img, 10, 100) #低いエッジと高いエッジの２つの閾値を設定する
+  cv2.imshow('Canny', img_canny)
+  cv2.waitKey(0)
+  cv2.destroyAllWindows()
+   
+32.直線・円の検出   
+  ・直線の画像は先にグレー画像使ってCannyでエッジ検出し、それを使って cv2.HoughLinesで検出する
+   
+   img = cv2.imread('data/src/road.jpg')
+   img_g = cv2.imread('data/src/road.jpg',0) 
+   img_canny = cv2.Canny(img_g, 300, 450)
+   cv2.imshow('img_canny', img_canny)   
+   
+   lines = cv2.HoughLines(img_canny, 1, np.pi/180, 100) #第2引数はロウの刻み幅,シータの刻み幅、組み合わせ回数の値
+   
+   for i in lines[:]:
+       rho = i[0][0]
+       theta = i[0][1]
+       a = np.cos(theta)
+       b = np.sin(theta)
+       x0 = rho * a
+       y0 = rho * b
+       x1 = int(x0 + 1000 * (-b))
+       y1 = int(y0 + 1000 * (a))
+       x2 = int(x0 - 1000 * (-b))
+       y2 = int(y0 - 1000 * (a))
+       cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
+   cv2.imshow('img', img)
+   cv2.waitKey(0)
+   
+  ・円の検出
+   img2 = cv2.imread('data/src/grapes.jpg')
+   img2_g = cv2.imread('data/src/grapes.jpg', 0)  
+   
+   circles = cv2.HoughCircles(img2_g, cv2.HOUGH_GRADIENT, dp = 1, minDist=1, param1=20, param2=35, minRadius=1, maxRadius=30)
+   
+   for i in circles[0]:
+      cv2.circle(img2, (i[0],i[1]),i[2], (255, 0, 0), 1)
+    
+   cv2.imshow('img', img2)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+33.モルフォロジー演算
+  ・モルフォロジー演算とは膨張と収縮からなり、ものを分類したり、ノイズを消せる
+  ・オープニング・クロージングは図形の大きさを保ちながら形状操作
+    オープニング(収縮→膨張)
+    クロージング(膨張→収縮)
+    
+  ・膨張と収縮    
+   img = cv2.imread('data/src/floor.jpg',0) 
+   # モルフォロジー演算するには画像が2値化されている必要がある
+   ret, img_th = cv2.threshold(img, 110, 255, cv2.THRESH_BINARY)
+   cv2.imshow('img', img_th)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+   kernel = np.ones((3,3), dtype=np.uint8) 
+   img_d = cv2.dilate(img_th, kernel) #膨張
+   img_e = cv2.erode(img_th, kernel)  #収縮
+   
+   cv2.imshow('img', img_th)
+   cv2.imshow('e', img_e)
+   cv2.imshow('d', img_d)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・クロージング
+   img_c = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, kernel)
+   
+   cv2.imshow('c', img_c)
+   cv2.imshow('d', img_d)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+34. インペイント
+   インペイントとは画像の落書きなどを除去する
+   mask画像を作成し、元画像とmask画像を合わせる
+   
+   img = cv2.imread('data/src/Bus.jpg')
+   img_mask = cv2.imread('data/src/Mask.jpg',0)
+   
+   # マスク画像を2値化
+   thresh = 1
+   ret, img_bin = cv2.threshold(img_mask, thresh, 255, cv2.THRESH_BINARY)
+   cv2.imshow('img', img_bin)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+   img_dst = cv2.inpaint(img, img_bin, 3, cv2.INPAINT_NS)
+   cv2.imshow('img', img)
+   cv2.imshow('inpaint', img_dst)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+      
+35.特徴抽出とは
+   特徴とはパターン認識に役立つ情報量の多い部分の事
+   コーナー、エッジ、フラットの順番で情報量が多い
+   コーナー、エッジ、フラットは画像の固有値を調べると判別できる(Harrisのコーナー検出)
+   特徴抽出・記述器には様々な種類のものがある。ORB,KAZE,AKAZEなどがお手軽。
+   
+36. 特徴抽出
+
+   import cv2
+   import numpy as np
+   import copy
+   
+   img = cv2.imread('data/src/buildings.jpg')
+   img_g = cv2.imread('data/src/buildings.jpg',0)
+   
+  ・Harrisのコーナー検出   
+   img_harris = copy.deepcopy(img)
+   img_dst = cv2.cornerHarris(img_g, 2, 3, 0.04)
+   img_harris[img_dst > 0.05 * img_dst.max()] = [0, 0, 255]  #特徴量MAXの5%以上を赤色で表示
+   
+   cv2.imshow('img', img_harris)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・KAZEで特徴点を表示
+   img_kaze = copy.deepcopy(img)
+   kaze = cv2.KAZE_create()
+   kp1 = kaze.detect(img, None) #特徴抽出して特徴点を求める
+   img_kaze = cv2.drawKeypoints(img_kaze, kp1, None)
+   cv2.imshow('img', img_kaze)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+  ・AKAZEで特徴点を表示
+   img_kaze = copy.deepcopy(img)
+   kaze = cv2.AKAZE_create()
+   kp1 = kaze.detect(img, None) #特徴抽出して特徴点を求める
+   img_kaze = cv2.drawKeypoints(img_kaze, kp1, None)
+   cv2.imshow('img', img_kaze)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+
+  ・OBEで特徴点を表示   
+   img_orb = copy.deepcopy(img)
+   orb = cv2.ORB_create()
+   kp2 = orb.detect(img_orb)
+   img_orb = cv2.drawKeypoints(img_orb, kp2, None)
+   cv2.imshow('img', img_orb)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+37.顔検出
+   # opencvデフォルトの顔検出器
+   HAAR_FILE = "C:/Users/mikam/Anaconda3/pkgs/opencv3-3.1.0-py35_0/Library/etc/haarcascades/haarcascade_frontalface_default.xml"
+   cascade = cv2.CascadeClassifier(HAAR_FILE)
+   
+   img = cv2.imread('data/src/Solvay_conference_1927.jpg')
+   img_g = cv2.imread('data/src/Solvay_conference_1927.jpg', 0)
+   
+   face = cascade.detectMultiScale(img_g) #顔の場所座標を抽出
+   
+   for x, y, w, h in face:
+       cv2.rectangle(img, (x,y),(x+w, y+h), (0,0,255),1)
+   cv2.imshow('img', img)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+38.ブロブの検出
+   ブロブとは塊の事
+   img = cv2.imread('data/src/Blob.png')
+   img_g = cv2.imread('data/src/Blob.png', 0)
+   
+   # ブロブの検出には2値化画像が必要
+   ret, img_bi = cv2.threshold(img_g,100, 255, cv2.THRESH_BINARY)
+   cv2.imshow('img', img_bi)
+   
+   # nLabelsはブロブ数(背景も含まれる)
+   # labelImageはブロブの場所
+   # statsはブロブの幅、高さ、面積
+   # centroidsはブロブの中心座標
+   nLabels, labelImage, stats, centroids = cv2.connectedComponentsWithStats(img_bi)
+   
+39.輪郭の検出 
+
+   img = cv2.imread('data/src/Blob.png')
+   img_g = cv2.imread('data/src/Blob.png', 0)  
+   
+   ret, img_bi = cv2.threshold(img_g,100, 255, cv2.THRESH_BINARY)
+   
+   img_con, contours, hierarchy = cv2.findContours(img_bi,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+   img_contour = cv2.drawContours(img, contours, -1, (255,0,0),1)
+   
+   cv2.imshow('img', img_contour)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
+   
+セクション5:動画処理・動画解析
+40.色検出
+  ・動画から特定の色部分のみをハイライトさせる(例：今回は黄色)
+   cap = cv2.VideoCapture('data/movie/Mobility.mp4')
+   while True:
+       cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+       cv2.resizeWindow('img', 640, 480)
+       ret, frame = cap.read()
+       if ret == False:
+           break
+       hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+       lower = np.array([20, 50, 50]) #黄色定義の下限
+       upper = np.array([25, 255, 255]) #黄色定義の上限
+       frame_mask = cv2.inRange(hsv, lower, upper)
+       dst = cv2.bitwise_and(frame, frame, mask = frame_mask) #2値画像の論理積で共通する部分を求める
+       cv2.imshow('img', dst)
+       if cv2.waitKey(10) == 27: #Esc押すと終了
+           break
+   cv2.destroyAllWindows()  
+   
+41.オプティカルフロー
+  ・特徴点を見つけて、追いかけていく画像処理
+  
+  cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+  cv2.resizeWindow('img', 1200, 800)
+  COUNT = 500  # 特徴点の設定
+  criteria = (cv2.TERM_CRITERIA_MAX_ITER | cv2.TERM_CRITERIA_EPS, 20, 0.03) # 収束条件
+  lk_params = dict(winSize=(10,10), maxLevel=4, criteria=criteria)
+  cap = cv2.VideoCapture('data/movie/Cosmos.mp4')
+  ret, frame = cap.read()
+  frame_pre = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+  while True:
+      ret, frame = cap.read()
+      if ret == False:
+          break
+      frame_now = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+      feature_pre = cv2.goodFeaturesToTrack(frame_pre, COUNT, 0.001, 5)  # 特徴点を見つける部分
+      if feature_pre is None:
+          continue
+      feature_now, status, err = cv2.calcOpticalFlowPyrLK(frame_pre, frame_now, feature_pre, None, **lk_params)
+      for i in range(COUNT):
+          pre_x = feature_pre[i][0][0]
+          pre_y = feature_pre[i][0][1]
+          now_x = feature_now[i][0][0]
+          now_y = feature_now[i][0][1]
+          cv2.line(frame, (pre_x, pre_y), (now_x, now_y), (255, 0, 0), 3)
+      cv2.imshow('img', frame)
+      frame_pre = frame_now.copy()
+      if cv2.waitKey(10) == 27:
+          break        
+  cv2.destroyAllWindows()
+
+42. MeanShift・CamShift
+  ・ピクセル密度最大の場所を追いかける
+    MeanShiftはユーザ指定の探索窓の範囲で追いかける
+    CamShiftは探索窓が可変になる
+    
+   cap = cv2.VideoCapture('data/movie/Cruse.mp4')
+   ret, frame = cap.read()
+   h, w, ch = frame.shape     
+   
+   # meanShiftの場合
+   rct = (600, 500, 200, 200) #検索窓の開始点座標と窓の大きさ
+   cv2.namedWindow('win', cv2.WINDOW_NORMAL)
+   cv2.resizeWindow('win', 1200, 800)
+   cri = (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, 10, 1) #収束条件
+   while True:
+       threshold = 100
+       ret, frame = cap.read()
+       if ret == False:
+           break
+       img_g  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+       ret, img_bin = cv2.threshold(img_g, threshold, 255, cv2.THRESH_BINARY) #2値画像を取得
+       ret, rct = cv2.meanShift(img_bin, rct, cri)
+       x, y, w, h = rct
+       frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0),3)
+       cv2.imshow('win', frame)
+       if cv2.waitKey(10) == 27:
+           break
+   cv2.destroyAllWindows()
+   
+   # CamShiftの場合
+   rct = (600, 500, 200, 200) #検索窓の開始点座標と窓の大きさ
+   cv2.namedWindow('win', cv2.WINDOW_NORMAL)
+   cv2.resizeWindow('win', 1200, 800)
+   cri = (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, 10, 1) #収束条件
+   while True:
+       threshold = 100
+       ret, frame = cap.read()
+       if ret == False:
+           break
+       img_g  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+       ret, img_bin = cv2.threshold(img_g, threshold, 255, cv2.THRESH_BINARY) #2値画像を取得
+       ret, rct = cv2.CamShift(img_bin, rct, cri)
+       x, y, w, h = rct
+       frame = cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0),3)
+       cv2.imshow('win', frame)
+       if cv2.waitKey(10) == 27:
+           break
+   cv2.destroyAllWindows()
+   
+43.背景差分
+
+   cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+   cv2.resizeWindow('img', 1200, 800)
+   cap = cv2.VideoCapture('data/movie/Pepole.mp4')
+   ret, frame = cap.read()
+   h, w, ch = frame.shape
+   frame_back = np.zeros((h, w, ch), dtype=np.float32)
+   while True:
+       ret, frame = cap.read()
+       if ret == False:
+           break
+       frame_diff = cv2.absdiff(frame.astype(np.float32), frame_back)
+       cv2.accumulateWeighted(frame, frame_back, 0.03) #frame_backに3%づつ元画像を混ぜる
+       cv2.imshow('img', frame_diff.astype(np.uint8))
+       if cv2.waitKey(10) == 27:
+           break
+   cv2.destroyAllWindows()   
+   
+45.パーティクルフィルター
+  ・乱数を用いた状態推定法
+  
+  import cv2
+  import numpy as np
+  import random2  # フォルダ内の別途作成した関数
+  import likelihood as li # フォルダ内の別途作成した関数
+  
+  cap = cv2.VideoCapture('data/movie/Tram.mp4')
+  ret, frame = cap.read()
+  h, w = frame.shape[:2]
+  np.random.seed(100)
+  Np = 500 # 粒子の設定
+  px = np.zeros((Np), dtype=np.int64)
+  py = np.zeros((Np), dtype=np.int64)
+  lp = np.zeros((Np)) #粒子の尤度を入れる箱
+  for i in range(Np):
+      px[i] = int(np.random.uniform(0,w))
+      py[i] = int(np.random.uniform(0,h))
+  obj = [0, 110, 160] #動画の黄色い部分を指定
+  while True:
+      ret, frame = cap.read()
+      if ret == False:
+          break
+      lp = li.likelihood(frame, px, py, obj, Np, sigma2=0.001)
+      pxnew = np.array(random2.choices(population=px, weights=lp, k = Np)) + np.random.randint(-15, 15, Np)
+      pynew = np.array(random2.choices(population=py, weights=lp, k = Np)) + np.random.randint(-15, 15, Np)
+      px = np.where(pxnew > w -1, w -1, pxnew) #画面からはみ出した時の処理
+      py = np.where(pynew > h -1, h -1, pynew) #画面からはみ出した時の処理
+      px = np.where(px < 0, 0, px)
+      py = np.where(py < 0, 0, py)
+      for i in range(Np):
+          cv2.circle(frame, (px[i],py[i]), 1, (0, 255, 0), 1)
+      cv2.imshow('img', frame)
+      if cv2.waitKey(10) == 27:
+          break
+  cv2.destroyAllWindows()
+     
